@@ -1,332 +1,753 @@
-
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<title>小张 - 官方网站</title>
-<link rel="icon" type="image/jpg" sizes="32x32" href="https://pan.tenire.com/view.php/0d760576f5c2fd9ea6688c089cc40fed.jpg">
-<meta charset="UTF-8"> 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  html, body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    min-height: 100vh;
-    padding: 20px 15px;
-    user-select: none;
-    -webkit-user-select: none;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* 恢复顶部对齐，允许滑动 */
-    position: relative;
-    overflow: auto; /* 恢复页面滚动 */
-    height: auto; /* 取消固定高度 */
-    touch-action: auto; /* 恢复触摸行为 */
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>东东项目官网</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-  /* 主卡片容器 */
-  .main-card {
-    width: 100%;
-    max-width: 550px;
-    background: #1a1a1a;
-    border-radius: 20px;
-    box-shadow: 0 6px 25px rgba(0,0,0,0.35);
-    overflow: hidden;
-    position: relative;
-    opacity: 0;
-    animation: cardFadeIn 1s ease 0.3s forwards;
-    z-index: 10;
-    min-height: 650px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 20px 0; /* 添加上下外边距，方便滑动展示 */
-  }
+        /* 全局滚动优化 - 强制GPU加速 + 平滑滚动 */
+        body {
+            min-height: 100vh;
+            /* 固定背景，减少滚动重绘 */
+            background: radial-gradient(circle at 10% 20%, rgba(180, 210, 245, 0.5), rgba(210, 230, 255, 0.3)),
+                        linear-gradient(145deg, #eef4fc 0%, #e2ebf6 100%);
+            background-attachment: fixed;
+            font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, BlinkMacSystemFont, sans-serif;
+            padding: 24px 20px 100px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* 关键：平滑滚动 + 触摸滚动优化 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
 
-  @keyframes cardFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        /* 主容器 */
+        .glass-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            /* 启用独立合成层 */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+        }
 
-  /* 图片展示区 */
-  .card-img {
-    padding: 20px;
-    margin: 0 auto;
-    flex-shrink: 0;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: imgFadeIn 1s ease 0.6s forwards;
-    width: 220px;
-  }
-  .card-img img {
-    width: 100%;
-    height: auto;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,255,255,0.2);
-    border: 2px solid rgba(255,255,255,0.3);
-  }
-  @keyframes imgFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        /* ========= 全局玻璃卡片样式 - 平衡模糊与性能 ========= 
+           降低blur强度至16px，依旧通透但大幅减少GPU负担 */
+        .glass-card, .profile-card, .section, .device-info, .footer-glass {
+            background: rgba(245, 250, 255, 0.68);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-radius: 34px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05), inset 0 0.5px 0 rgba(255,255,255,0.7);
+            border: 0.5px solid rgba(255,255,255,0.5);
+            /* 强制开启硬件加速 */
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            will-change: transform;
+            transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.2s ease;
+        }
 
-  /* 北京时间展示 */
-  .card-time {
-    color: #ffffff;
-    font-size: clamp(16px, 4vw, 20px);
-    text-shadow: 0 0 8px #ffffff;
-    margin: 10px 0;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: timeFadeIn 1s ease 1s forwards;
-    letter-spacing: 4px;
-    padding: 0 10px;
-  }
-  @keyframes timeFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        /* hover仅在非触摸设备上生效，避免移动端卡顿 */
+        @media (hover: hover) and (pointer: fine) {
+            .glass-card:hover, .btn-glass:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+            }
+        }
 
-  /* 卡片头部 */
-  .card-header {
-    padding: 20px 20px 30px;
-    text-align: center;
-    background: linear-gradient(135deg, #222, #000);
-    flex-shrink: 0;
-    width: 100%;
-  }
+        /* 头部区域 */
+        .header-glass {
+            background: rgba(235, 245, 255, 0.55);
+            backdrop-filter: blur(18px) saturate(200%);
+            -webkit-backdrop-filter: blur(18px) saturate(200%);
+            border-radius: 48px;
+            padding: 16px 28px;
+            border: 0.5px solid rgba(255,255,255,0.7);
+            box-shadow: 0 6px 16px -6px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transform: translateZ(0);
+        }
 
-  .card-header h1 {
-    color: #ffffff;
-    font-size: clamp(24px, 6vw, 32px);
-    margin: 12px 0;
-    text-shadow: 0 0 10px #ffffff, 5px 4px 10px #255;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: headerFadeIn 1s ease 0.8s forwards;
-  }
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 590;
+            background: linear-gradient(135deg, #1f4870, #2c5a82);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
 
-  @keyframes headerFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        .status-indicator {
+            background: rgba(235, 245, 255, 0.55);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 0.5px solid rgba(255,255,255,0.5);
+        }
 
-  /* 卡片内容区 */
-  .card-body {
-    padding: 40px 20px 50px;
-    text-align: center;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: 100%;
-  }
+        .status-value {
+            font-weight: 590;
+            font-size: 18px;
+            color: #2a6b9e;
+        }
 
-  .btn-group {
-    margin-bottom: 40px;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: btnFadeIn 1s ease 1s forwards;
-  }
+        .status-label {
+            font-size: 13px;
+            color: #3a5a7a;
+        }
 
-  @keyframes btnFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        /* 响应式布局 */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 28px;
+        }
 
-  .card-body button {
-    padding: 14px 28px;
-    font-size: 18px;
-    margin: 12px 10px;
-    border-radius: 12px;
-    border: none;
-    background: rgba(0,0,0,0.6);
-    color: #ffffff;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    transition: background 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-    min-width: 140px;
-    border: 1px solid rgba(255,255,255,0.3);
-  }
+        @media (max-width: 880px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+                gap: 22px;
+            }
+            body {
+                padding: 18px 16px 90px;
+            }
+            .header-glass {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
 
-  .card-body button:hover {
-    background: rgba(255,255,255,0.2);
-    color: #ffffff;
-  }
+        /* 侧边栏卡片 */
+        .profile-card {
+            padding: 26px 20px;
+            text-align: center;
+            background: rgba(240, 248, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
 
-  /* 音乐播放器 */
-  .drag-music-box {
-    position: fixed; /* 播放器仍固定，不随滚动移动 */
-    bottom: 30px;
-    right: 30px;
-    width: 380px;
-    height: 200px;
-    z-index: 998;
-    opacity: 0;
-    animation: musicFadeIn 1s ease 1.5s forwards;
-    touch-action: none;
-  }
+        .avatar-glass {
+            width: 108px;
+            height: 108px;
+            margin: 0 auto 18px;
+            background: rgba(210, 230, 250, 0.5);
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.6);
+            overflow: hidden;
+        }
 
-  @keyframes musicFadeIn {
-    from { opacity: 0; transform: translate(20px, 20px); }
-    to { opacity: 1; transform: translate(0, 0); }
-  }
+        .avatar-glass img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-  .drag-handle {
-    width: 100%;
-    height: 15px;
-    background: rgba(0,0,0,0.8);
-    cursor: move;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 500;
-    text-shadow: 0 0 4px #ffffff;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    -webkit-tap-highlight-color: transparent;
-    border-radius: 8px 8px 0 0;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
-  }
+        .profile-name {
+            font-size: 26px;
+            font-weight: 620;
+            background: linear-gradient(135deg, #1f4870, #2f6491);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
 
-  .music-iframe {
-    width: 100%;
-    height: calc(100% - 30px);
-    border: none;
-    border-radius: 0 0 8px 8px;
-  }
+        .profile-role {
+            font-size: 15px;
+            color: #2a6b9e;
+            font-weight: 490;
+            margin: 8px 0 12px;
+            background: rgba(42, 107, 158, 0.12);
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+        }
 
-  @media (max-width: 420px) {
-    .drag-music-box {
-      width: 320px;
-      height: 160px;
-      right: 15px;
-      bottom: 15px;
-    }
-    .main-card {
-      min-height: 600px;
-    }
-    .card-img {
-      width: 180px;
-    }
-    .card-time {
-      font-size: 16px;
-      letter-spacing: 3px;
-    }
-  }
-</style>
+        .profile-desc {
+            font-size: 14px;
+            color: #4a627a;
+            line-height: 1.4;
+        }
+
+        /* 右侧功能卡片 */
+        .section, .device-info {
+            background: rgba(240, 248, 255, 0.65);
+            backdrop-filter: blur(16px);
+            border-radius: 38px;
+            padding: 18px 22px;
+            transform: translateZ(0);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.7);
+        }
+
+        .icon-blur {
+            width: 44px;
+            height: 44px;
+            background: rgba(190, 220, 250, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #2a6b9e;
+            box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.7), 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 590;
+            color: #1f4870;
+        }
+
+        /* 按钮网格 - 减少内部滤镜层级 */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .btn-glass {
+            background: rgba(245, 250, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            transition: transform 0.15s ease, background 0.2s;
+            border: 0.5px solid rgba(255,255,255,0.6);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.6);
+            transform: translateZ(0);
+            cursor: pointer;
+        }
+
+        .btn-glass:active {
+            transform: scale(0.98);
+            background: rgba(235, 245, 255, 0.88);
+        }
+
+        .btn-icon-glass {
+            width: 44px;
+            height: 44px;
+            background: rgba(190, 218, 245, 0.5);
+            backdrop-filter: blur(6px);
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #2a6b9e;
+        }
+
+        .btn-content {
+            flex: 1;
+        }
+
+        .btn-title {
+            font-weight: 590;
+            font-size: 16px;
+            color: #1f4870;
+        }
+
+        .btn-desc {
+            font-size: 13px;
+            color: #5a7896;
+            margin-top: 2px;
+        }
+
+        .badge-glass {
+            background: rgba(42, 107, 158, 0.2);
+            backdrop-filter: blur(6px);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #2a6b9e;
+            border: 0.3px solid rgba(255,255,255,0.5);
+        }
+
+        /* 设备信息 */
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 16px;
+        }
+        .device-title {
+            font-weight: 590;
+            font-size: 18px;
+            color: #1f4870;
+        }
+        .device-status {
+            background: rgba(42, 107, 158, 0.2);
+            border-radius: 26px;
+            padding: 4px 12px;
+            font-size: 13px;
+            color: #2a6b9e;
+        }
+        .device-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .device-item {
+            flex: 1;
+            min-width: 100px;
+        }
+        .device-label {
+            font-size: 12px;
+            color: #6a85a0;
+        }
+        .device-value {
+            font-weight: 560;
+            font-size: 17px;
+            color: #1f4870;
+            margin-top: 4px;
+        }
+
+        /* 悬浮玻璃底栏 - 极致轻量化 */
+        .glass-bottom-bar {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%) translateZ(0);
+            width: calc(100% - 32px);
+            max-width: 520px;
+            background: rgba(235, 245, 255, 0.8);
+            backdrop-filter: blur(24px) saturate(200%);
+            -webkit-backdrop-filter: blur(24px) saturate(200%);
+            border-radius: 44px;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border: 0.5px solid rgba(255,255,255,0.7);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06), inset 0 0.5px 0 rgba(255,255,255,0.8);
+            z-index: 1000;
+            gap: 8px;
+            will-change: transform;
+        }
+
+        .bottom-link {
+            color: #3a6b92;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 490;
+            padding: 8px 12px;
+            border-radius: 32px;
+            transition: background 0.2s;
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+        }
+        .bottom-link:active {
+            background: rgba(255,255,255,0.6);
+            transform: scale(0.96);
+        }
+
+        /* 弹窗轻量化 */
+        .glass-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(100, 130, 170, 0.2);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+        }
+        .glass-modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.2s ease, visibility 0s linear 0s;
+        }
+        .glass-modal {
+            background: rgba(248, 252, 255, 0.96);
+            backdrop-filter: blur(28px);
+            border-radius: 48px;
+            width: 300px;
+            max-width: 80vw;
+            padding: 24px 22px;
+            text-align: center;
+            box-shadow: 0 20px 36px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.6);
+            border: 0.5px solid rgba(255,255,255,0.7);
+            transform: scale(0.96);
+            transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .active .glass-modal {
+            transform: scale(1);
+        }
+        .glass-modal h3 {
+            font-size: 21px;
+            font-weight: 590;
+            margin-bottom: 10px;
+            color: #1f4870;
+        }
+        .glass-modal p {
+            font-size: 15px;
+            color: #4a6988;
+            margin: 10px 0 18px;
+            line-height: 1.4;
+        }
+        .modal-btn {
+            background: rgba(42, 107, 158, 0.2);
+            backdrop-filter: blur(6px);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 44px;
+            font-size: 16px;
+            font-weight: 510;
+            color: #2a6b9e;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .modal-btn:active {
+            background: rgba(42, 107, 158, 0.35);
+        }
+
+        /* 页脚轻量化 */
+        footer {
+            background: transparent;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .footer-glass {
+            background: rgba(235, 245, 255, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 12px 20px;
+            display: inline-block;
+            width: auto;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .footer-link {
+            color: #4a7396;
+            text-decoration: none;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: background 0.15s;
+        }
+        .footer-link:active {
+            background: rgba(42,107,158,0.1);
+        }
+
+        /* 滚动条美观 */
+        ::-webkit-scrollbar {
+            width: 4px;
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(42,107,158,0.25);
+            border-radius: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="main-card">
-    <div class="card-img">
-      <img src="http://glowguide.space/img/690551c547360.jpg" alt="小张展示图">
-    </div>
-    <div class="card-time" id="beijingTime">2025-12-15 04:09:05</div>
-    <div class="card-header">
-      <h1>小张大王</h1>
-      <h1>官方频道@F91VIP</h1>
-    </div>
-    <div class="card-body">
-      <div class="btn-group">
-        <button onclick="a1()"> 官方频道 </button>
-        <button onclick="a2()"> 官方Q群 </button>
-        <button onclick="a3()"> 跳转东东官网 </button>
-        <div class="copyright">
-        <h10>© 2025 小张 | 技术人员:东东</h10>
+
+<div class="glass-container">
+    <!-- 头部 -->
+    <div class="header-glass">
+        <div class="logo">
+            <h1>东东项目导航页</h1>
         </div>
-        </footer>
-      </div>
+        <div class="status-indicator">
+            <span class="status-value" id="uptimeDisplay">7891天</span>
+            <span class="status-label">稳定运行</span>
+            <i class="fas fa-cloud-sun" style="color:#2a6b9e; margin-left: 6px;"></i>
+        </div>
     </div>
-  </div>
 
-  <div class="drag-music-box" id="dragMusicBox">
-    <div class="drag-handle" id="dragHandle">☰ 拖动调整位置</div>
-    <iframe class="music-iframe" frameborder="no" border="0" marginwidth="0" marginheight="0" src="https://music.163.com/outchain/player?type=4&id=979457519&auto=1&height=90"></iframe>
-  </div>
+    <div class="two-columns">
+        <!-- 左侧个人信息卡片 -->
+        <div class="profile-card glass-card">
+            <div class="avatar-glass">
+                <img src="http://129.204.47.214:8888/down/KArdGzt5EbmX.jpg" alt="东东" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerText='东东'; this.parentElement.style.fontSize='42px'; this.parentElement.style.fontWeight='600'; this.parentElement.style.background='rgba(42,107,158,0.2)';">
+            </div>
+            <div class="profile-name">东东</div>
+            <div class="profile-role">项目频道：@DDMHNB</div>
+            <p class="profile-desc">苦厄难夺凌云志，不死终有出头日</p>
+        </div>
 
-  <script>
-    // 北京时间更新
-    function updateBeijingTime() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('beijingTime').textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-    updateBeijingTime();
-    setInterval(updateBeijingTime, 1000);
+        <!-- 右侧功能区 -->
+        <div class="functions" style="display: flex; flex-direction: column; gap: 22px;">
+            <!-- QQ 频道（原卡网板块） -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="icon-blur"><i class="fab fa-qq"></i></div>
+                    <div class="section-title">QQ 频道</div>
+                </div>
+                <div class="buttons-grid">
+                    <a href="https://pd.qq.com/s/9w75q3jz7?b=9" class="btn-glass" target="_blank" rel="noopener noreferrer">
+                        <div class="btn-icon-glass"><i class="fab fa-qq"></i></div>
+                        <div class="btn-content">
+                            <div class="btn-title">东东 QQ 频道</div>
+                            <div class="btn-desc">加入频道·获取最新动态</div>
+                        </div>
+                        <div class="badge-glass">QQ</div>
+                    </a>
+                </div>
+            </div>
 
-    // 移除所有禁止滑动的事件监听
-    setTimeout(() => {
-      alert("欢迎进入小张官网\n官方频道@F91VIP");
-    }, 0);
+            <!-- 项目导航 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="icon-blur"><i class="fas fa-compass"></i></div>
+                    <div class="section-title">项目频道</div>
+                </div>
+                <div class="buttons-grid">
+                    <a href="https://t.me/DDMHNB" class="btn-glass" target="_blank" rel="noopener noreferrer">
+                        <div class="btn-icon-glass"><i class="fab fa-telegram-plane"></i></div>
+                        <div class="btn-content">
+                            <div class="btn-title">Telegram 频道</div>
+                            <div class="btn-desc">加入频道·获取最新动态</div>
+                        </div>
+                        <div class="badge-glass">频道</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 支持联系 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="icon-blur"><i class="fas fa-headset"></i></div>
+                    <div class="section-title">支持与联系</div>
+                </div>
+                <div class="buttons-grid">
+                    <a href="https://v.kuaishou.com/7e1y1w4X" class="btn-glass" target="_blank" rel="noopener noreferrer">
+                        <div class="btn-icon-glass"><i class="fab fa-kickstarter-k"></i></div>
+                        <div class="btn-content">
+                            <div class="btn-title">东东快手</div>
+                            <div class="btn-desc">官方动态·最新资讯</div>
+                        </div>
+                        <div class="badge-glass">快手</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 设备信息 -->
+            <div class="device-info">
+                <div class="device-header">
+                    <div class="device-title"><i class="fas fa-mobile-alt" style="margin-right: 8px;"></i> 设备信息</div>
+                    <div class="device-status" id="deviceStatusBadge">在线</div>
+                </div>
+                <div class="device-details">
+                    <div class="device-item">
+                        <div class="device-label">设备类型</div>
+                        <div class="device-value" id="deviceTypeLabel">检测中...</div>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-label">网络状态</div>
+                        <div class="device-value" id="netStatusLabel">在线</div>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-label">电池电量</div>
+                        <div class="device-value" id="batteryValueLabel">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    function a1(){
-      window.open("https://t.me/F91VIP");
-    }
-    
-    function a2(){
-      window.open("https://qm.qq.com/q/ZS9T3tC5AQ");
-    }
-    
-    function a3(){
-      window.open("https://7891vip.rth1.xyz/");
-    }
+    <!-- 页脚 -->
+    <footer>
+        <div class="footer-glass">
+            <p style="font-size: 13px; opacity: 0.7;">© 2026 东东 创新科技 | 保留所有权利</p>
+            <div class="footer-links">
+                <a href="#" class="footer-link" id="termsBtn">使用条款</a>
+                <a href="#" class="footer-link" id="privacyBtn">隐私政策</a>
+                <a href="#" class="footer-link" id="disclaimerBtn">免责声明</a>
+            </div>
+        </div>
+    </footer>
+</div>
 
-    // 音乐播放器拖动
-    const dragBox = document.getElementById('dragMusicBox');
-    const dragHandle = document.getElementById('dragHandle');
-    let isDragging = false;
-    let startX, startY;
+<!-- 悬浮底栏 -->
+<div class="glass-bottom-bar">
+    <a href="#" class="bottom-link" id="homeLink"><i class="fas fa-home"></i> 首页</a>
+    <a href="#" class="bottom-link" id="navChannelLink"><i class="fab fa-telegram"></i> 频道</a>
+    <a href="#" class="bottom-link" id="shopLink"><i class="fab fa-qq"></i> Q频道</a>
+    <a href="#" class="bottom-link" id="contactLink"><i class="fas fa-comment"></i> 联系</a>
+</div>
 
-    dragHandle.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', dragMove);
-    document.addEventListener('mouseup', stopDrag);
-    dragHandle.addEventListener('touchstart', startDrag, {passive: true});
-    document.addEventListener('touchmove', dragMove, {passive: false});
-    document.addEventListener('touchend', stopDrag);
+<!-- 弹窗 -->
+<div id="glassModal" class="glass-modal-overlay">
+    <div class="glass-modal">
+        <h3 id="modalTitle"></h3>
+        <p id="modalText"></p>
+        <button class="modal-btn" id="closeModalBtn">了解</button>
+    </div>
+</div>
 
-    function startDrag(e) {
-      isDragging = true;
-      const clientX = e.clientX || e.touches[0].clientX;
-      const clientY = e.clientY || e.touches[0].clientY;
-      startX = clientX - dragBox.getBoundingClientRect().left;
-      startY = clientY - dragBox.getBoundingClientRect().top;
-      dragHandle.style.background = 'rgba(0,0,0,0.9)';
-    }
+<script>
+    (function() {
+        // 运行天数 (轻量更新)
+        const startDate = new Date(2026, 9, 10);
+        function updateUptime() {
+            const now = new Date();
+            const diffDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+            const uptimeElem = document.getElementById('uptimeDisplay');
+            if (uptimeElem) uptimeElem.innerText = diffDays >= 0 ? diffDays + '天' : '0天';
+        }
+        updateUptime();
+        setInterval(updateUptime, 3600000);
+        
+        // 设备信息 (一次性获取)
+        const deviceElem = document.getElementById('deviceTypeLabel');
+        const netElem = document.getElementById('netStatusLabel');
+        const batteryElem = document.getElementById('batteryValueLabel');
+        const statusBadge = document.getElementById('deviceStatusBadge');
 
-    function dragMove(e) {
-      if (!isDragging) return;
-      e.preventDefault();
-      const clientX = e.clientX || e.touches[0].clientX;
-      const clientY = e.clientY || e.touches[0].clientY;
-      let newX = clientX - startX;
-      let newY = clientY - startY;
-      const maxX = window.innerWidth - dragBox.offsetWidth;
-      const maxY = window.innerHeight - dragBox.offsetHeight;
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
-      dragBox.style.left = newX + 'px';
-      dragBox.style.top = newY + 'px';
-      dragBox.style.bottom = 'auto';
-      dragBox.style.right = 'auto';
-    }
+        function detectDevice() {
+            const ua = navigator.userAgent;
+            if (/iPhone|iPad|iPod/.test(ua)) return 'iOS 设备';
+            if (/Android/.test(ua)) return 'Android 设备';
+            if (/Windows/.test(ua)) return 'Windows 电脑';
+            if (/Mac/.test(ua)) return 'Mac 设备';
+            return '跨平台设备';
+        }
+        if (deviceElem) deviceElem.innerText = detectDevice();
 
-    function stopDrag() {
-      if (!isDragging) return;
-      isDragging = false;
-      dragHandle.style.background = 'rgba(0,0,0,0.8)';
-    }
-  </script>
+        function updateNetwork() {
+            const online = navigator.onLine;
+            netElem.innerText = online ? '在线' : '离线';
+            if (statusBadge) {
+                statusBadge.innerText = online ? '在线' : '离线';
+                statusBadge.style.background = online ? "rgba(42,107,158,0.2)" : "rgba(180,80,80,0.2)";
+            }
+        }
+        updateNetwork();
+        window.addEventListener('online', updateNetwork);
+        window.addEventListener('offline', updateNetwork);
+
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                const updateBattery = () => {
+                    batteryElem.innerText = Math.round(battery.level * 100) + '%';
+                };
+                updateBattery();
+                battery.addEventListener('levelchange', updateBattery);
+            }).catch(() => { batteryElem.innerText = '100%'; });
+        } else {
+            batteryElem.innerText = '100%';
+        }
+
+        // 弹窗逻辑
+        const modalOverlay = document.getElementById('glassModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        function showGlassDialog(title, message) {
+            modalTitle.innerText = title;
+            modalText.innerText = message;
+            modalOverlay.classList.add('active');
+        }
+
+        function hideModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        closeModalBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) hideModal();
+        });
+
+        // 底部条款
+        document.getElementById('termsBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            showGlassDialog('使用条款', '请遵守相关法律法规，本工具仅供学习交流使用。所有资源版权归原作者。');
+        });
+        document.getElementById('privacyBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            showGlassDialog('隐私政策', '我们极其重视隐私保护，不收集任何个人数据。透明、安全、轻量。');
+        });
+        document.getElementById('disclaimerBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            showGlassDialog('免责声明', '东东 为第三方独立项目，与游戏/平台官方无关，使用风险自负。');
+        });
+
+        // 底栏导航
+        const homeLink = document.getElementById('homeLink');
+        const navChannel = document.getElementById('navChannelLink');
+        const shopLink = document.getElementById('shopLink');
+        const contactLink = document.getElementById('contactLink');
+        
+        homeLink?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        navChannel?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.open('https://t.me/DDMHNB', '_blank', 'noopener');
+        });
+        shopLink?.addEventListener('click', (e) => {
+            e.preventDefault();
+            // 请将下方链接替换为真实的 QQ 频道地址
+            window.open('https://pd.qq.com/s/你的频道ID', '_blank', 'noopener');
+        });
+        contactLink?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.open('https://v.kuaishou.com/KeqHjspT', '_blank', 'noopener');
+        });
+
+        // 按钮轻触反馈（无额外性能开销）
+        document.querySelectorAll('.btn-glass, .bottom-link, .footer-link').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            }, { passive: true });
+            btn.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+            btn.addEventListener('touchcancel', function() {
+                this.style.transform = '';
+            });
+        });
+    })();
+</script>
 </body>
 </html>
